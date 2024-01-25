@@ -49,22 +49,54 @@ class OBJECT_OT_set_active_uv(bpy.types.Operator):
 
         return {'FINISHED'}
 
+class OBJECT_OT_remove_non_active(bpy.types.Operator):
+    bl_idname = "object.remove_non_active_selection"
+    bl_label = "Remove non-active UV layout"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    @classmethod
+    def poll(cls, context):
+        obj = context.active_object
+        return obj is not None and obj.type == 'MESH' and obj.data.uv_layers.active
+
+    def execute(self, context):
+        active_obj = context.active_object
+        active_uv = obj.data.uv_layers.active
+
+        objects = bpy.context.selected_objects
+
+        for obj in [objects for x in objects if x.type == 'MESH']:
+            for layer in obj.data.uv_layers.keys():
+                layer = obj.data.uv_layers[layer]
+                if layer != active_uv:
+                    obj.data.uv_layers.remove(layer)
+
+
+
+
 
 def draw_set_active_uv(self, context):
     layout = self.layout
     layout.operator(OBJECT_OT_set_active_uv.bl_idname)
+    layout.operator(OBJECT_OT_remove_non_active.bl_idname)
 
+
+classes = (
+    OBJECT_OT_remove_non_active,
+    OBJECT_OT_set_active_uv
+)
 
 def register():
-    bpy.utils.register_class(OBJECT_OT_set_active_uv)
+    for cls in classes:
+        bpy.utils.register_class(cls)
     bpy.types.DATA_PT_uv_texture.append(draw_set_active_uv)
 
 
 def unregister():
-    bpy.utils.unregister_class(OBJECT_OT_set_active_uv)
+    for cls in classes:
+        bpy.utils.unregister_class(cls)
     bpy.types.DATA_PT_uv_texture.remove(draw_set_active_uv)
 
 
 if __name__ == "__main__":
     register()
-    # Test call
